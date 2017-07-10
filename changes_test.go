@@ -21,7 +21,9 @@ func TestNewChanges(t *testing.T) {
 			require := require.New(t)
 			sto, err := ct.NewRepository()
 			require.NoError(err)
-			changes, err := newChanges(timeNow, ct.OldReferences, sto)
+			oldRefs := NewModelReferencer(&model.Repository{References: ct.OldReferences})
+			newRefs := NewGitReferencer(sto)
+			changes, err := newChanges(timeNow, oldRefs, newRefs)
 			require.NoError(err)
 
 			sortChanges(changes)
@@ -44,7 +46,9 @@ func TestChanges_ReferenceToTagObject(t *testing.T) {
 	r, err := git.Open(sto, memfs.New())
 	require.NoError(err)
 
-	changes, err := newChanges(timeNow, nil, r)
+	emptyRefs := NewModelReferencer(model.NewRepository())
+	newRefs := NewGitReferencer(r)
+	changes, err := newChanges(timeNow, emptyRefs, newRefs)
 	require.NoError(err)
 
 	require.Equal(1, len(changes))

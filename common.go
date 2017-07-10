@@ -138,3 +138,7 @@ func CreateRepositoryTable() {
 type RepositoryStorage interface {
 	Repository(ic model.SHA1) *git.Repository
 }
+
+type Referencer interface {
+	References() ([]*model.Reference, error)
+}
