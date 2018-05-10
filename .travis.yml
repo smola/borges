@@ -1,46 +1,46 @@
+#TODO: remove
+go_import_path: github.com/src-d/borges
+dist: trusty
+sudo: required
+os:
+  - linux
+  - osx
 language: go
-
-go:
-  - 1.9.x
-  - 1.10.x
-  - tip
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    - go: tip
-
+go: 1.10.x
 env:
-  - DBUSER=postgres DBPASS=
-
-services:
-  - docker
-  - postgresql
-  - rabbitmq
-
-addons:
-  postgresql: "9.6"
-
+  global:
+    - DBUSER=postgres
+    - DBPASS=
+  matrix:
+    - POSTGRESQL_VERSION=9.6 RABBITMQ_VERSION=any
+cache:
+  directories:
+    - $HOME/Library/Caches/Homebrew
+install:
+  - make ci-install
 before_script:
   - psql -c 'create database testing;' -U postgres
-
 script:
-  - make test-coverage
+  - make ci-script
   - go get github.com/golang/dep/cmd/dep
   - dep ensure
   - make no-changes-in-commit
-
-before_deploy:
-  - make packages
-
-deploy:
-  provider: releases
-  api_key: $GITHUB_TOKEN
-  file_glob: true
-  file: build/*.tar.gz
-  skip_cleanup: true
-  on:
-    tags: true
-
-after_deploy:
-  - DOCKER_PUSH_LATEST=1 make docker-push
+jobs:
+  include:
+    - stage: deploy
+      if: tag IS present
+      script: skip
+      services:
+        - docker
+      sudo: required
+      go: 1.10.x
+      before_deploy:
+        - make packages
+      deploy:
+        provider: releases
+        api_key: $GITHUB_TOKEN
+        file_glob: true
+        file: build/*.tar.gz
+        skip_cleanup: true
+      after_deploy:
+        -  DOCKER_PUSH_LATEST=1 make docker-push
